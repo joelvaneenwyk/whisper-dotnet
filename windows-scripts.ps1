@@ -1,3 +1,15 @@
+#!/usr/bin/env pwsh
+# cspell:ignore psise,nupkgs,nugets,vswhere
+
+function Get-ScriptDirectory {
+    if ($psise) {
+        Split-Path $psise.CurrentFile.FullPath
+    }
+    else {
+        $global:PSScriptRoot
+    }
+}
+
 function PackAllNugets([Parameter(Mandatory = $true)] [string]$Version, [Parameter(Mandatory = $false)] [string]$Configuration = "Release") {
     New-Item -ItemType Directory -Force -Path "nupkgs"
     nuget pack Whisper.net.Runtime.nuspec -Version $Version -OutputDirectory ./nupkgs
@@ -46,10 +58,11 @@ function BuildWindowsBase() {
         [Parameter(Mandatory = $false)] [bool]$Clblast = $false,
         [Parameter(Mandatory = $false)] [string]$Configuration = "Release"
     )
-    $buildDirectoryName = ".build"
+    $scriptDirectory = Get-ScriptDirectory
+    $buildDirectoryRoot = "$scriptDirectory/.build"
 
-    if (!(Test-Path $buildDirectoryName)) {
-        New-Item -ItemType Directory -Force -Path $buildDirectoryName
+    if (!(Test-Path $buildDirectoryRoot)) {
+        New-Item -ItemType Directory -Force -Path $buildDirectoryRoot
     }
 
     Write-Host "Building Windows binaries for $Arch with cublas: $Cublas, and clblast: $Clblast"
@@ -61,10 +74,7 @@ function BuildWindowsBase() {
         return
     }
 
-    # Get current script directory
-    $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
-
-    $buildDirectory = "$scriptDirectory/$buildDirectoryName/win-$Arch"
+    $buildDirectory = "$buildDirectoryRoot/win-$Arch"
     $options = @("-S", $scriptDirectory)
     $options += @("-G", "Visual Studio 17 2022")
 
@@ -85,7 +95,7 @@ function BuildWindowsBase() {
 
     if ((Test-Path $buildDirectory)) {
         Write-Host "Deleting old build files for $buildDirectory";
-        Remove-Item -Force -Recurse -Path $buildDirectory
+        Remove-Item -Force -Recurse -Path $buildDirectory | out-null
     }
 
     $cmakePath = (Get-Command cmake -ErrorAction SilentlyContinue).Source
