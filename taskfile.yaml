@@ -1,0 +1,205 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+# https://taskfile.dev
+
+version: "3"
+
+includes:
+  whisper:
+    taskfile: whisper.cpp/taskfile.yaml
+    optional: true
+
+vars:
+  RUN_WINDOWS: 'cmd /D /E:ON /C'
+  RUN_UNIX: 'sh -c'
+  RUN: '{{if eq OS "windows"}}{{.RUN_WINDOWS}}{{ else }}{{.RUN_UNIX}}{{ end }}'
+
+  MSBUILD_EXE_RAW:
+    sh: |
+      strings=("Preview" "Enterprise" "Professional" "Community")
+      for str in "${strings[@]}"
+      do
+        result="C:/Program Files/Microsoft Visual Studio/2022/${str}/MSBuild/Current/Bin/amd64/MSBuild.exe"
+        if [ -e "$result" ]; then
+          echo "$result"
+          break
+        fi
+      done
+  MSBUILD_EXE: '{{fromSlash .MSBUILD_EXE_RAW}}'
+
+  BUILD_INT_DIR: "{{.TASKFILE_DIR}}/.build/tasks"
+  BUILD_DIR: "{{fromSlash .BUILD_INT_DIR}}"
+
+  CONFIG: Release
+  ARCHITECTURE: x64
+  USE_SDL2: ON
+  GENERATOR: '{{if eq OS "windows"}}Visual Studio 17 2022{{else}}Unix Makefiles{{end}}'
+  TOOLCHAIN: 'external/vcpkg/scripts/buildsystems/vcpkg.cmake'
+  SLN: '{{ joinPath .BUILD_DIR "Whisper.net.sln" | fromSlash }}'
+
+env:
+  VCPKG_DISABLE_METRICS: 1
+
+tasks:
+  default:
+    cmds:
+      - task: build
+
+  commit-prepare:
+    deps: [build]
+    vars:
+      COMMIT_MSG: 'Update'
+      IOS_BINDINGS_DIR: '{{.TASKFILE_DIR}}/bindings/ios'
+      IOS_BINDINGS_MAKEFILE: '{{.TASKFILE_DIR}}/bindings/ios/Makefile'
+    cmds:
+      - cmd: 'git -C "{{ .IOS_BINDINGS_DIR }}" checkout -q -- "{{ fromSlash .IOS_BINDINGS_MAKEFILE }}"'
+        ignore_error: true
+      - cmd: 'git -C "{{ .TASKFILE_DIR }}" add .'
+
+  model:
+    internal: true
+    vars:
+      MODEL: '{{ default "base" .MODEL }}'
+      MODEL_FILE: "ggml-{{ .MODEL }}.bin"
+      MODEL_OUTPUT_REL_PATH: "models/{{ .MODEL_FILE }}"
+      MODEL_OUTPUT_PATH: "{{ .TASKFILE_DIR }}/{{ .MODEL_OUTPUT_REL_PATH }}"
+      MODEL_URL: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{{.MODEL_FILE}}"
+    status:
+      - 'test -f "{{ fromSlash .MODEL_OUTPUT_PATH }}"'
+    cmds:
+      - cmd: >-
+          pwsh
+          -NoProfile
+          -ExecutionPolicy Bypass
+          -Command "Start-BitsTransfer -Source '{{ .MODEL_URL }}' -Destination '{{ fromSlash .MODEL_OUTPUT_PATH }}'"
+
+  check:
+    deps: [build]
+    vars:
+      MODEL: '{{ default "base" .MODEL }}'
+      SAMPLE: '{{ default "jfk" .SAMPLE }}'
+      SAMPLE_WAV_PATH: "{{ .TASKFILE_DIR }}/samples/{{ .SAMPLE }}.wav"
+      SAMPLE_OUTPUT_DIR: "{{ .BUILD_DIR }}/output"
+      SAMPLE_OUTPUT: "{{ .SAMPLE_OUTPUT_DIR }}/{{ .SAMPLE }}"
+
+      OUTPUT_SRT_PATH: "{{ .SAMPLE_OUTPUT }}.srt"
+      MODEL_PATH: "{{ .TASKFILE_DIR }}/models/ggml-{{ .MODEL }}.bin"
+    preconditions:
+      - 'test -f "{{ .SAMPLE_WAV_PATH }}"'
+    status:
+      - 'test -f "{{ .OUTPUT_SRT_PATH }}"'
+    cmds:
+      - task: model
+      - cmd: 'mkdir "{{ fromSlash .SAMPLE_OUTPUT_DIR }}"'
+        ignore_error: true
+      - task: run
+        vars:
+          CLI_ARGS: >-
+            --output-srt
+            --output-file "{{ fromSlash .SAMPLE_OUTPUT }}"
+            --model "{{ fromSlash .MODEL_PATH }}"
+            --file "{{ fromSlash .SAMPLE_WAV_PATH }}"
+      - task: commit-prepare
+
+  run:
+    deps: [build]
+    vars:
+      CONFIG: '{{ default "Debug" .CONFIG }}'
+      OUTPUT_DIR: '{{ joinPath .BUILD_DIR "bin" .CONFIG | fromSlash }}'
+      OUTPUT_EXE: '{{ joinPath .OUTPUT_DIR "main.exe" }}'
+    preconditions:
+      - 'test -f "{{.OUTPUT_EXE}}"'
+    cmds:
+      - cmd: '{{ .RUN }} "{{ fromSlash .OUTPUT_EXE }}" {{ .CLI_ARGS }}'
+
+  build:
+    deps: [configure]
+    sources:
+      - '{{ .SLN }}'
+    generates:
+      - '{{ joinPath .BUILD_DIR "bin" "Debug" "main.exe" }}'
+      - '{{ joinPath .BUILD_DIR "bin" "Release" "main.exe" }}'
+    cmds:
+      - task: msbuild
+        vars: { CONFIG: Debug, PLATFORM: '{{ .ARCHITECTURE }}', SLN: '{{ .SLN }}' }
+      - task: msbuild
+        vars: { CONFIG: Release, PLATFORM: '{{ .ARCHITECTURE }}', SLN: '{{ .SLN }}' }
+
+  configure:
+    deps: [git-submodule-init, whisper:build]
+    preconditions:
+      - 'cmake --version'
+    sources:
+      - CMakeLists.txt
+    generates:
+      - '{{ .SLN }}'
+    cmds:
+      - cmd: >
+          cmake
+          -S "{{ .TASKFILE_DIR }}"
+          -B "{{ .BUILD_DIR }}"
+          -G "{{ .GENERATOR }}"
+          -A "{{ .ARCHITECTURE }}"
+          -DCMAKE_BUILD_TYPE="{{ .CONFIG }}"
+          -DCMAKE_TOOLCHAIN_FILE="{{ joinPath .TASKFILE_DIR "whisper.cpp" .TOOLCHAIN }}"
+          -DWHISPER_SDL2={{ .USE_SDL2 }}
+
+  msbuild:
+    internal: true
+    deps: [install-dependencies]
+    vars:
+      CONFIG: '{{.CONFIG | default "Debug"}}'
+      PLATFORM: '{{.PLATFORM | default "x64"}}'
+    preconditions:
+      - '"{{.MSBUILD_EXE}}" --version'
+      - 'test -f "{{.SLN}}"'
+    cmds:
+      - cmd: >
+          "{{ .MSBUILD_EXE }}"
+          -t:Build -p:Configuration="{{.CONFIG}}" -p:Platform="{{.PLATFORM}}"
+          "{{ fromSlash .SLN }}"
+
+  install-dependencies:
+    deps: [install-packages-scoop-pkg-config]
+    cmds:
+      - task: install-packages
+
+  scoop-install:
+    desc: Install libraries with scoop
+    status:
+      - 'scoop --version'
+    cmds:
+      - cmd: pwsh -NoProfile -Command 'iex "& {$(irm get.scoop.sh)} -RunAsAdmin"'
+        platforms: [windows]
+        ignore_error: true
+      - cmd: pwsh -NoProfile -Command 'Join-Path (Resolve-Path ~).Path "scoop/shims" >> $Env:GITHUB_PATH'
+        platforms: [windows]
+        ignore_error: true
+
+  git-submodule-init:
+    status:
+      - 'test -f "{{ joinPath .TASKFILE_DIR "whisper.cpp" ".gitmodules" }}"'
+    cmds:
+      - cmd: 'git -C "{{.TASKFILE_DIR}}" submodule update --init --recursive'
+
+  install-packages:
+    cmds:
+      - task: install-packages-scoop-pkg-config
+
+  install-packages-scoop-pkg-config:
+    deps: [scoop-install]
+    platforms: [windows]
+    status:
+      - pkg-config --version
+    cmds:
+      - cmd: scoop install extras/pkg-config-lite
+
+  delete:
+    internal: true
+    requires: { vars: [TARGET_DIR] }
+    status:
+      - 'test -d "{{.TARGET_DIR}}"'
+    cmds:
+      - cmd: '{{.RUN}} if exist "{{.TARGET_DIR}}" rmdir /s /q "{{.TARGET_DIR}}"'
+        platforms: [windows]
+      - cmd: '{{.RUN}} rm -rf "{{.TARGET_DIR}}"'
+        platforms: [linux, darwin]
