@@ -46,22 +46,27 @@ function BuildWindowsBase() {
         [Parameter(Mandatory = $false)] [bool]$Clblast = $false,
         [Parameter(Mandatory = $false)] [string]$Configuration = "Release"
     )
-    #if not exist "build" create the directory
-    if (!(Test-Path "build")) {
-        New-Item -ItemType Directory -Force -Path "build"
+    $buildDirectoryName = ".build"
+
+    if (!(Test-Path $buildDirectoryName)) {
+        New-Item -ItemType Directory -Force -Path $buildDirectoryName
     }
 
     Write-Host "Building Windows binaries for $Arch with cublas: $Cublas, and clblast: $Clblast"
 
-    
+
     $platform = Get-MSBuildPlatform $Arch
     if ([string]::IsNullOrEmpty($platform)) {
         Write-Host "Unknown architecture $Arch"
         return
     }
-    
-    $buildDirectory = "build/win-$Arch"
-    $options = @("-S", ".")
+
+    # Get current script directory
+    $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+    $buildDirectory = "$scriptDirectory/$buildDirectoryName/win-$Arch"
+    $options = @("-S", $scriptDirectory)
+    $options += @("-G", "Visual Studio 17 2022")
 
     if ($Cublas) {
         $options += "-DWHISPER_CUBLAS=1"
@@ -94,13 +99,13 @@ function BuildWindowsBase() {
         $env:Path += ";$visualStudioPath"
     }
 
-    New-Item -ItemType Directory -Force -Path $buildDirectory
+    New-Item -ItemType Directory -Force -Path $buildDirectory | out-null
 
     # call CMake to generate the makefiles
-    
-    Write-Host "Running 'cmake $options'"
-
+    Write-Host "Configuring CMake. 'cmake $options'"
     cmake $options
+
+    Write-Host "Running CMake build..."
     cmake --build $buildDirectory --config $Configuration
 
     $runtimePath = "./Whisper.net.Runtime"
@@ -110,13 +115,13 @@ function BuildWindowsBase() {
     if ($Clblast) {
         $runtimePath += ".Clblast"
     }
-    
+
     if (-not(Test-Path $runtimePath)) {
         New-Item -ItemType Directory -Force -Path $runtimePath
     }
 
     $runtimePath += "/win-$Arch"
-    
+
     if (-not(Test-Path $runtimePath)) {
         New-Item -ItemType Directory -Force -Path $runtimePath
     }
@@ -132,3 +137,5 @@ function BuildWindowsAll([Parameter(Mandatory = $false)] [string]$Configuration 
     BuildWindowsBase -Arch "x64" -Cublas $true -Configuration $Configuration;
     BuildWindowsBase -Arch "x64" -Clblast $true -Configuration $Configuration;
 }
+
+BuildWindowsAll
