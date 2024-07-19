@@ -141,29 +141,28 @@ The build scripts are a combination of `PowerShell` scripts and a `Makefile`. Yo
 
 ### Windows
 
-- Import the powershel module `Import-Module ./windows-scripts.ps1`
+- Import the Powershell module `Import-Module ./windows-scripts.ps1`
 - Run `BuildWindowsAll` to build all Windows libraries
 
 ## License
 
-MIT Licence
-[https://github.com/sandrohanea/whisper.net/blob/main/LICENSE](https://github.com/sandrohanea/whisper.net/blob/main/LICENSE)
+[MIT License](./LICENSE)
 
-## Supported platforms
+## Supported Platforms
 
-Whisper.net is supported on the following platforms:
+`Whisper.net` is supported on the following targets and platforms:
 
-- Windows x86
-- Windows x64
-- Windows ARM64
-- Windows ARM
-- Linux x64
-- Linux ARM64
-- Linux ARM
-- macOS x64
-- macOS ARM64 (Apple Silicon)
 - Android
 - iOS
+- Linux ARM
+- Linux ARM64
+- Linux x64
 - MacCatalyst
+- macOS ARM64 (Apple Silicon)
+- macOS x64
 - tvOS
 - WebAssembly
+- Windows ARM
+- Windows ARM64
+- Windows x64
+- Windows x86
