@@ -2,14 +2,12 @@ name: Windows native build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main, develop]
   pull_request:
-    branches: [ "main" ]
-
+    branches: [main, develop]
 
 jobs:
   build:
-
     runs-on: windows-2019
     permissions:
       contents: write
@@ -46,7 +44,7 @@ jobs:
       - name: Install OpenCl with vcpkg
         if: steps.check_submodule.outputs.trigger_build == 'true'
         run: |
-           vcpkg --triplet=x64-windows install opencl
+          vcpkg --triplet=x64-windows install opencl
 
       - name: Add Clblast to path
         if: steps.check_submodule.outputs.trigger_build == 'true'
@@ -67,7 +65,7 @@ jobs:
         if: steps.check_submodule.outputs.trigger_build == 'true'
         uses: Jimver/cuda-toolkit@v0.2.11
         with:
-          cuda: '12.1.0'
+          cuda: "12.1.0"
 
       - name: Run Build
         if: steps.check_submodule.outputs.trigger_build == 'true'

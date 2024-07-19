@@ -5,41 +5,40 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [main, develop]
   pull_request:
-    branches: [ "main" ]
-    
+    branches: [main, develop]
+
 jobs:
   build:
-    
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-    
+
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 7.0.x
-    - name: Install Java
-      if: runner.os == 'Windows'
-      uses: actions/setup-java@v2
-      with:
-        distribution: 'microsoft'
-        java-version: '11'
-    - name: Install .NET Workloads
-      if: runner.os == 'Windows'
-      run: | 
+      - uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 7.0.x
+      - name: Install Java
+        if: runner.os == 'Windows'
+        uses: actions/setup-java@v2
+        with:
+          distribution: "microsoft"
+          java-version: "11"
+      - name: Install .NET Workloads
+        if: runner.os == 'Windows'
+        run: |
           dotnet workload install android --ignore-failed-sources
           dotnet workload install ios --ignore-failed-sources
           dotnet workload install tvos --ignore-failed-sources
           dotnet workload install maccatalyst --ignore-failed-sources
-    - name: Restore dependencies
-      run: dotnet restore ./Whisper.net.sln
-    - name: Build
-      run: dotnet build ./Whisper.net.sln --no-restore -warnaserror 
-    - name: Test
-      run: |
-        dotnet test ./Whisper.net.sln --no-build
+      - name: Restore dependencies
+        run: dotnet restore ./Whisper.net.sln
+      - name: Build
+        run: dotnet build ./Whisper.net.sln --no-restore -warnaserror
+      - name: Test
+        run: |
+          dotnet test ./Whisper.net.sln --no-build
