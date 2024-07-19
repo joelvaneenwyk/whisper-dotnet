@@ -20,7 +20,7 @@ jobs:
       with:
         submodules: true
         ref: ${{ github.head_ref }}
-    
+
     - name: Check for submodule update
       id: check_submodule
       run: |
@@ -28,17 +28,17 @@ jobs:
         SUBMODULE_COMMIT_ID=$(git rev-parse HEAD)
         echo "Submodule commit ID: $SUBMODULE_COMMIT_ID"
         cd $GITHUB_WORKSPACE
-        STORED_COMMIT_ID=$(cat native-commit-id-macos)
+        STORED_COMMIT_ID=$(cat ./.github/config/native-commit-id-macos)
         echo "Stored commit ID: $STORED_COMMIT_ID"
         if [ "$SUBMODULE_COMMIT_ID" != "$STORED_COMMIT_ID" ]; then
           echo "Submodule has new commits. Triggering build."
           echo "trigger_build=true" >> $GITHUB_OUTPUT
-          echo $SUBMODULE_COMMIT_ID > native-commit-id-macos
+          echo $SUBMODULE_COMMIT_ID > ./.github/config/native-commit-id-macos
         else
           echo "No new commits in submodule."
           echo "trigger_build=false" >> $GITHUB_OUTPUT
         fi
-        
+
 
     - name: Run apple coreml build
       if: steps.check_submodule.outputs.trigger_build == 'true'

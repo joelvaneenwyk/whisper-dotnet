@@ -27,12 +27,12 @@ jobs:
           $SubmoduleCommitId = git rev-parse HEAD
           Write-Host "Submodule commit ID: $SubmoduleCommitId"
           Set-Location $Env:GITHUB_WORKSPACE
-          $StoredCommitId = Get-Content native-commit-id-windows
+          $StoredCommitId = Get-Content ./.github/config/native-commit-id-windows
           Write-Host "Stored commit ID: $StoredCommitId"
           if ($SubmoduleCommitId -ne $StoredCommitId) {
             Write-Host "Submodule has new commits. Triggering build."
             Write-Output "trigger_build=true" | Out-File -Append $Env:GITHUB_OUTPUT
-            Set-Content -Path native-commit-id-windows -Value $SubmoduleCommitId
+            Set-Content -Path ./.github/config/native-commit-id-windows -Value $SubmoduleCommitId
           } else {
             Write-Host "No new commits in submodule."
             Write-Output "trigger_build=false" | Out-File -Append $Env:GITHUB_OUTPUT
@@ -42,7 +42,7 @@ jobs:
       - name: Add msbuild to PATH
         if: steps.check_submodule.outputs.trigger_build == 'true'
         uses: microsoft/setup-msbuild@v1
-        
+
       - name: Install OpenCl with vcpkg
         if: steps.check_submodule.outputs.trigger_build == 'true'
         run: |
@@ -71,7 +71,7 @@ jobs:
 
       - name: Run Build
         if: steps.check_submodule.outputs.trigger_build == 'true'
-        run: | 
+        run: |
           Import-Module ./windows-scripts.ps1
           BuildWindowsAll
         shell: pwsh
