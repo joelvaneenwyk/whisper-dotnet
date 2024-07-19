@@ -41,7 +41,7 @@ jobs:
 
       - name: Add msbuild to PATH
         if: steps.check_submodule.outputs.trigger_build == 'true'
-        uses: microsoft/setup-msbuild@v1
+        uses: microsoft/setup-msbuild@v2
 
       - name: Install OpenCl with vcpkg
         if: steps.check_submodule.outputs.trigger_build == 'true'
