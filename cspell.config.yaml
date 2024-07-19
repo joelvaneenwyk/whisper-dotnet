@@ -1,0 +1,12 @@
+version: "0.2"
+ignorePaths:
+  - "**/.vs/**"
+  - "**/.git/**"
+dictionaryDefinitions:
+  - name: whisper-dotnet
+    path: .github/config/whisper-dotnet.dict
+    addWords: true
+dictionaries:
+  - whisper-dotnet
+import:
+  - whisper.cpp/cspell.config.yaml
