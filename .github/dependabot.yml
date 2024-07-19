@@ -6,10 +6,11 @@
 version: 2
 updates:
   - package-ecosystem: "nuget"
-    directory: "/" # Location of package manifests
+    directory: "/" 
     schedule:
       interval: "weekly"
-  - package-ecosystem: "nuget"
-    directory: "/examples" # Location of package manifests
+
+  - package-ecosystem: "github-actions"
+    directory: "/" 
     schedule:
       interval: "weekly"
