@@ -6,6 +6,7 @@
 .git/
 .task/
 .build/
+nuget.exe
 
 # User-specific files
 *.rsuser
