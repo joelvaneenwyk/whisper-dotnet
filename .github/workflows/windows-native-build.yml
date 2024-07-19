@@ -63,7 +63,7 @@ jobs:
 
       - name: Install CUDA Toolkit
         if: steps.check_submodule.outputs.trigger_build == 'true'
-        uses: Jimver/cuda-toolkit@v0.2.11
+        uses: Jimver/cuda-toolkit@v0.2.16
         with:
           cuda: "12.1.0"
 
