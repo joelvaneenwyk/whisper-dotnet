@@ -11,7 +11,7 @@ Install-Package Whisper.net
 Install-Package Whisper.net.Runtime
 ```
 
-or simply add a package reference in your csproj:
+or simply add a package reference in your `csproj`:
 
 ```xml
 <PackageReference Include="Whisper.net" Version="1.5.0" />
@@ -20,7 +20,7 @@ or simply add a package reference in your csproj:
 
 ## GPT for whisper
 
-We also have a custom-built GPT inside chatgpt, which can help you with information based on this code, previous issues and releases available [here](https://chat.openai.com/g/g-GQU8iEnAa-whisper-net-helper).
+We also have a custom-built GPT inside ChatGPT, which can help you with information based on this code, previous issues and releases available [here](https://chat.openai.com/g/g-GQU8iEnAa-whisper-net-helper).
 
 Please, make sure you try to ask it before publishing a new question here, as it can be a lot faster.
 
@@ -41,9 +41,9 @@ Note that only the CoreML built libraries are available in this package and does
 
 Using the ggml whisper models with CoreML requires an additional `mlmodelc` file to be placed alongside your whisper model.
 
-You can download and extract these using [WhisperGgmlDownloader](https://github.com/sandrohanea/whisper.net/blob/main/Whisper.net/Ggml/WhisperGgmlDownloader.cs#L45). Check the [CoreML example](https://github.com/sandrohanea/whisper.net/blob/main/examples/CoreML/Program.cs).
+You can download and extract these using [WhisperGgmlDownloader](./Whisper.net/Ggml/WhisperGgmlDownloader.cs#L45). Check the [CoreML example](./examples/CoreML/Program.cs).
 
-You can also generate these via the [whisper.cpp scripts](https://github.com/ggerganov/whisper.cpp#core-ml-support). As `whisper.cpp` uses filepaths to detect this folder, you must load your whisper model with a file path.
+You can also generate these via the [whisper.cpp scripts](https://github.com/joelvaneenwyk/whisper.cpp#core-ml-support). As `whisper.cpp` uses file paths to detect this folder, you must load your whisper model with a file path.
 
 If successful, the whisper output logs will announce:
 
@@ -141,7 +141,7 @@ The build scripts are a combination of `PowerShell` scripts and a `Makefile`. Yo
 
 ### Windows
 
-- Import the Powershell module `Import-Module ./windows-scripts.ps1`
+- Import the PowerShell module `Import-Module ./windows-scripts.ps1`
 - Run `BuildWindowsAll` to build all Windows libraries
 
 ## License
