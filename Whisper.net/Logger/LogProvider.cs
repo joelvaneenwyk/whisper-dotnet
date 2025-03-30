@@ -1,44 +1,62 @@
 // Licensed under the MIT license: https://opensource.org/licenses/MIT
 
 using System.Runtime.InteropServices;
+using Whisper.net.Internals.Native;
 using Whisper.net.Native;
 
 namespace Whisper.net.Logger;
-public class LogProvider
+public static class LogProvider
 {
-
-    private LogProvider()
+    /// <summary>
+    /// Adds a console logger that logs messages with a severity greater than or equal to the specified level.
+    /// </summary>
+    /// <param name="minLevel">The minimum severity level to log.</param>
+    /// <returns>
+    /// Returns a disposable object that can be used to remove the logger.
+    /// </returns>
+    public static IDisposable AddConsoleLogging(WhisperLogLevel minLevel = WhisperLogLevel.Info)
     {
-
+        return new WhisperLogger((level, message) =>
+        {
+            // Higher values are less severe
+            if (level <= minLevel)
+            {
+                Console.WriteLine($"[{level}] {message}");
+            }
+        });
     }
 
     /// <summary>
-    /// Returns the singleton instance of the <see cref="LogProvider"/> class used to log messages from the Whisper library.
+    /// Adds a logger that logs messages with a custom action.
     /// </summary>
-    public static LogProvider Instance { get; } = new();
+    /// <param name="logAction">The action to log.</param>
+    /// <returns>
+    /// Returns a disposable object that can be used to remove the logger.
+    /// </returns>
+    public static IDisposable AddLogger(Action<WhisperLogLevel, string?> logAction)
+    {
+        return new WhisperLogger(logAction);
+    }
 
-    public event Action<WhisperLogLevel, string?>? OnLog;
-
-    internal static void InitializeLogging()
+    internal static void InitializeLogging(INativeWhisper nativeWhisper)
     {
         IntPtr funcPointer;
-#if NET6_0_OR_GREATER
+#if NETSTANDARD
+        funcPointer = Marshal.GetFunctionPointerForDelegate(logCallback);
+#else
         unsafe
         {
             delegate* unmanaged[Cdecl]<GgmlLogLevel, IntPtr, IntPtr, void> onLogging = &LogUnmanaged;
             funcPointer = (IntPtr)onLogging;
         }
-#else
-        funcPointer = Marshal.GetFunctionPointerForDelegate(logCallback);
 #endif
-        NativeMethods.whisper_log_set(funcPointer, IntPtr.Zero);
+        nativeWhisper.Whisper_Log_Set(funcPointer, IntPtr.Zero);
     }
 
-#if NET6_0_OR_GREATER
-    [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
-# else
-
+#if NETSTANDARD
     private static readonly WhisperGgmlLogCallback logCallback = LogUnmanaged;
+# else
+    [UnmanagedCallersOnly(CallConvs = [typeof(System.Runtime.CompilerServices.CallConvCdecl)])]
 #endif
     internal static void LogUnmanaged(GgmlLogLevel level, IntPtr message, IntPtr user_data)
     {
@@ -49,11 +67,7 @@ public class LogProvider
             GgmlLogLevel.Warning => WhisperLogLevel.Warning,
             _ => WhisperLogLevel.Info
         };
-        Log(managedLevel, messageString);
-    }
 
-    internal static void Log(WhisperLogLevel level, string? message)
-    {
-        Instance.OnLog?.Invoke(level, message);
+        WhisperLogger.Log(managedLevel, messageString);
     }
 }

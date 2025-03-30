@@ -28,15 +28,16 @@ public class Program
         if (!Directory.Exists(coreMlModelcName))
         {
             // Note: The modelc directory needs to be extracted at the same level as the "ggml-base.bin" file (and the current executable).
-            await WhisperGgmlDownloader.GetEncoderCoreMLModelAsync(ggmlType)
+            await WhisperGgmlDownloader.Default.GetEncoderCoreMLModelAsync(ggmlType)
                                        .ExtractToPath(".");
         }
 
         // Optional logging from the native library
-        LogProvider.Instance.OnLog += (level, message) =>
+
+        using var whisperLogger = LogProvider.AddLogger((level, message) =>
         {
             Console.Write($"{level}: {message}");
-        };
+        });
 
         // This section creates the whisperFactory object which is used to create the processor object.
         using var whisperFactory = WhisperFactory.FromPath(modelFileName);
@@ -58,7 +59,7 @@ public class Program
     private static async Task DownloadModel(string fileName, GgmlType ggmlType)
     {
         Console.WriteLine($"Downloading Model {fileName}");
-        using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(ggmlType);
+        using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(ggmlType);
         using var fileWriter = File.OpenWrite(fileName);
         await modelStream.CopyToAsync(fileWriter);
     }

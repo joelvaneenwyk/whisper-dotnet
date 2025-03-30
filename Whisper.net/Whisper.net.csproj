@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>13</LangVersion>
+    <Version>1.8.1-preview1</Version>
+    <Authors>Sandro Hanea</Authors>
+    <Description>Cross-platform dotnet bindings for Whisper.</Description>
+    <PackageProjectUrl>https://github.com/sandrohanea/whisper.net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sandrohanea/whisper.net</RepositoryUrl>
+    <RepositoryType>GIT</RepositoryType>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE" Pack="true" PackagePath="" />
+    <None Include="..\readme.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;netstandard2.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <!--<PropertyGroup>
+    <USE_WHISPER_MAUI>TRUE</USE_WHISPER_MAUI>
+  </PropertyGroup>-->
+
+  <PropertyGroup Condition="$(USE_WHISPER_MAUI) != ''">
+    <TargetFrameworks>
+      net8.0;net9.0;netstandard2.0;net8.0-ios;net8.0-tvos;net8.0-maccatalyst;net8.0-android;net9.0-ios;net9.0-tvos;net9.0-maccatalyst;net9.0-android
+    </TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
+    <PackageReference Include="System.Memory" />
+    <PackageReference Include="System.IO.Compression" />
+    <PackageReference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Whisper.net.Maui.Tests" />
+    <InternalsVisibleTo Include="Whisper.net.Tests" />
+  </ItemGroup>
+
+</Project>

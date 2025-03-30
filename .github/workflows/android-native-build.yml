@@ -1,0 +1,32 @@
+name: Android Native build
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  native-build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          ref: ${{ github.head_ref }}
+
+      - name: Install Android NDK
+        uses: nttld/setup-ndk@afb4c9964b521afb97c864b7d40b11e6911bd410
+        with:
+          ndk-version: r25c
+
+      - name: Run android build
+        run: make android
+
+      - name: Upload Android Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: "runtimes/Whisper.net.Run*/android-*/*"
+          retention-days: 7

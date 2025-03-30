@@ -1,0 +1,34 @@
+name: Wasm Native build
+
+permissions:
+    contents: read
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  native-build:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          ref: ${{ github.head_ref }}
+
+      - name: Install Emscripten
+        uses: mymindstorm/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021
+
+      - name: Run wasm build
+        run: make wasm
+
+      - name: Remove Emscripten
+        run: rm -rf emsdk*
+
+      - name: Upload Wasm Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-build
+          path: "runtimes/Whisper.net.Run*/browser-wasm/*"
+          retention-days: 7

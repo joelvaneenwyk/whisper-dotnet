@@ -1,0 +1,218 @@
+<Project ToolsVersion="4.0"
+  xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup
+    Condition="(('$(Platform)' == 'iPhoneSimulator') OR $(RuntimeIdentifier.StartsWith('iossimulator')))">
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-simulator\libwhisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libwhisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-simulator\libwhisper.coreml.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libwhisper.coreml.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-simulator\libggml-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libggml-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-simulator\libggml-base-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libggml-base-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-simulator\libggml-cpu-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libggml-cpu-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-simulator\libggml-blas-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libggml-blas-whisper.dylib</TargetPath>
+    </None>
+
+  </ItemGroup>
+  <ItemGroup
+    Condition="(('$(Platform)' == 'iPhone') OR ('$(RuntimeIdentifier)' == 'ios') OR $(RuntimeIdentifier.StartsWith('ios-')) OR $(RuntimeIdentifier.StartsWith('ios.')))">
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-device\libwhisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libwhisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-device\libggml-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libggml-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-device\libwhisper.coreml.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libwhisper.coreml.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-device\libggml-base-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libggml-base-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-device\libggml-cpu-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libggml-cpu-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)ios-device\libggml-blas-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libggml-blas-whisper.dylib</TargetPath>
+    </None>
+
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework.Contains('-maccatalyst')) == true ">
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)maccatalyst\libwhisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/maccatalyst/libwhisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)maccatalyst\libggml-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/maccatalyst/libggml-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)maccatalyst\libwhisper.coreml.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>libwhisper.coreml.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)maccatalyst\libggml-base-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/maccatalyst/libggml-base-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)maccatalyst\libggml-cpu-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/maccatalyst/libggml-cpu-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)maccatalyst\libggml-blas-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/maccatalyst/libggml-blas-whisper.dylib</TargetPath>
+    </None>
+  </ItemGroup>
+  <!-- Metal Maui asset for maccatalyst, ios, tvos and their simulators -->
+  <ItemGroup Condition="$(RuntimeIdentifier.StartsWith('tvos-')) or $(RuntimeIdentifier.StartsWith('tvossimulator-')) or (('$(Platform)' == 'iPhone') OR ('$(RuntimeIdentifier)' == 'ios') OR $(RuntimeIdentifier.StartsWith('ios-')) OR $(RuntimeIdentifier.StartsWith('ios.'))) or $(TargetFramework.Contains('-maccatalyst')) == true or (('$(Platform)' == 'iPhoneSimulator') OR $(RuntimeIdentifier.StartsWith('iossimulator')))">
+    <MauiAsset Include="$(MSBuildThisFileDirectory)\ggml-metal.metal" LogicalName="ggml-metal.metal" />
+  </ItemGroup>
+
+  <!-- Metal Copy For MacOS -->
+  <ItemGroup Condition="$(TargetFramework.Contains('-')) == false">
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)\ggml-metal.metal">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>ggml-metal.metal</TargetPath>
+      <PublishFolderType>RootDirectory</PublishFolderType>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup Condition="$(TargetFramework.Contains('-')) == false ">
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-x64\libwhisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-x64/libwhisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-x64\libggml-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-x64/libggml-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-x64\libwhisper.coreml.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-x64/libwhisper.coreml.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-x64\libggml-base-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-x64/libggml-base-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-x64\libggml-cpu-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-x64/libggml-cpu-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-x64\libggml-blas-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-x64/libggml-blas-whisper.dylib</TargetPath>
+    </None>
+
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-arm64\libwhisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-arm64/libwhisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-arm64\libggml-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-arm64/libggml-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-arm64\libwhisper.coreml.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-arm64/libwhisper.coreml.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-arm64\libggml-base-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-arm64/libggml-base-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-arm64\libggml-cpu-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-arm64/libggml-cpu-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-arm64\libggml-blas-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-arm64/libggml-blas-whisper.dylib</TargetPath>
+    </None>
+    <None Visible="false" Include="$(MSBuildThisFileDirectory)macos-arm64\libggml-metal-whisper.dylib">
+      <Pack>true</Pack>
+      <PackageCopyToOutput>true</PackageCopyToOutput>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>runtimes/coreml/macos-arm64/libggml-metal-whisper.dylib</TargetPath>
+    </None>
+  </ItemGroup>
+</Project>

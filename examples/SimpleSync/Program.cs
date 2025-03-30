@@ -24,10 +24,7 @@ public class Program
         }
 
         // Optional logging from the native library
-        LogProvider.Instance.OnLog += (level, message) =>
-        {
-            Console.WriteLine($"{level}: {message}");
-        };
+        using var whisperLogger = LogProvider.AddConsoleLogging(WhisperLogLevel.Debug);
 
         // This section creates the whisperFactory object which is used to create the processor object.
         using var whisperFactory = WhisperFactory.FromPath("ggml-base.bin");
@@ -51,7 +48,7 @@ public class Program
     private static async Task DownloadModel(string fileName, GgmlType ggmlType)
     {
         Console.WriteLine($"Downloading Model {fileName}");
-        using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(ggmlType);
+        using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(ggmlType);
         using var fileWriter = File.OpenWrite(fileName);
         await modelStream.CopyToAsync(fileWriter);
     }

@@ -1,0 +1,37 @@
+name: Windows native build Without AVX
+
+permissions:
+    contents: read
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  native-build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          ref: ${{ github.head_ref }}
+          
+      - name: Install Ninja
+        id: install_ninja
+        run: |
+          choco install ninja
+          
+      - name: Run Build
+        run: |
+          Import-Module ./windows-scripts.ps1
+          BuildWindows -Arch "x64" -Configuration "Release"  -NoAvx $true
+          BuildWindows -Arch "x86" -Configuration "Release"  -NoAvx $true
+        shell: pwsh
+
+      - name: Upload Windows NoAvx Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-noavx-build
+          path: "runtimes/Whisper.net.Run*/win-*/*"
+          retention-days: 7

@@ -54,11 +54,11 @@ await foreach (var result in processor.ProcessAsync(samples))
     fileStream.Position = headerSize + startSample * frameSize;
 
     // Read the wave data for the specified time interval, into the readBuffer.
-    await fileStream.ReadAsync(readBuffer.AsMemory());
+    var read = await fileStream.ReadAsync(readBuffer.AsMemory());
 
     // Process the readBuffer and convert to shorts.
-    var buffer = new short[bufferSize / 2];
-    for (var i = 0; i < buffer.Length; i++)
+    var buffer = new short[read / 2];
+    for (var i = 0; i < read; i++)
     {
         // Handle endianess manually and convert bytes to Int16.
         buffer[i] = BitConverter.IsLittleEndian
@@ -89,7 +89,7 @@ await foreach (var result in processor.ProcessAsync(samples))
 static async Task DownloadModel(string fileName, GgmlType ggmlType)
 {
     Console.WriteLine($"Downloading Model {fileName}");
-    using var modelStream = await WhisperGgmlDownloader.GetGgmlModelAsync(ggmlType);
+    using var modelStream = await WhisperGgmlDownloader.Default.GetGgmlModelAsync(ggmlType);
     using var fileWriter = File.OpenWrite(fileName);
     await modelStream.CopyToAsync(fileWriter);
 }

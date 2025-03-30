@@ -1,0 +1,37 @@
+name: Windows OpenVino native build
+
+permissions:
+    contents: read
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  native-build:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          ref: ${{ github.head_ref }}
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce
+
+      - name: Run Build
+        run: |
+          Invoke-WebRequest -Uri https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.4.1/windows/w_openvino_toolkit_windows_2024.4.1.16618.643f23d1318_x86_64.zip -OutFile openvino.zip
+          Expand-Archive -Path openvino.zip -DestinationPath openvino
+          .\openvino\w_openvino_toolkit_windows_2024.4.1.16618.643f23d1318_x86_64\setupvars.ps1
+          Import-Module ./windows-scripts.ps1
+          BuildWindows -Arch "x64" -Configuration "Release"  -OpenVino $true
+        shell: pwsh
+
+      - name: Upload Windows OpenVino Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-openvino-build
+          path: "runtimes/Whisper.net.Run*/win-*/*"
+          retention-days: 7

@@ -1,9 +1,10 @@
 // Licensed under the MIT license: https://opensource.org/licenses/MIT
 
+using System.Runtime.InteropServices;
+using Whisper.net.Internals;
 using Whisper.net.Internals.ModelLoader;
 using Whisper.net.LibraryLoader;
 using Whisper.net.Logger;
-using Whisper.net.Native;
 
 namespace Whisper.net;
 
@@ -17,74 +18,130 @@ public sealed class WhisperFactory : IDisposable
 {
     private readonly IWhisperProcessorModelLoader loader;
     private readonly Lazy<IntPtr> contextLazy;
+    private readonly bool isEagerlyInitialized;
+    private readonly StringPool stringPool = new();
     private bool wasDisposed;
-    private static bool bypassLoading;
-    private static string? libraryPath;
 
     private static readonly Lazy<LoadResult> libraryLoaded = new(() =>
     {
-        var libraryLoaded = NativeLibraryLoader.LoadNativeLibrary(WhisperFactory.libraryPath, WhisperFactory.bypassLoading);
+        var libraryLoaded = NativeLibraryLoader.LoadNativeLibrary();
         if (libraryLoaded.IsSuccess)
         {
-            LogProvider.InitializeLogging();
+            LogProvider.InitializeLogging(libraryLoaded.NativeWhisper!);
         }
         return libraryLoaded;
     }, true);
 
-    private WhisperFactory(IWhisperProcessorModelLoader loader, bool delayInit, string? libraryPath = default, bool bypassLoading = false)
+    private WhisperFactory(IWhisperProcessorModelLoader loader, bool delayInit)
     {
-        WhisperFactory.libraryPath = libraryPath;
-        WhisperFactory.bypassLoading = bypassLoading;
-
-        if (!libraryLoaded.Value.IsSuccess)
-        {
-            throw new Exception($"Failed to load native whisper library. Error: {libraryLoaded.Value.ErrorMessage}");
-        }
+        CheckLibraryLoaded();
 
         this.loader = loader;
         if (!delayInit)
         {
-            var nativeContext = loader.LoadNativeContext();
+            var nativeContext = loader.LoadNativeContext(libraryLoaded.Value.NativeWhisper!);
+            isEagerlyInitialized = true;
+
+#if NET8_0_OR_GREATER
+            contextLazy = new Lazy<IntPtr>(nativeContext);
+#else
             contextLazy = new Lazy<IntPtr>(() => nativeContext);
+#endif
         }
         else
         {
-            contextLazy = new Lazy<IntPtr>(() => loader.LoadNativeContext(), isThreadSafe: false);
+            contextLazy = new Lazy<IntPtr>(() => loader.LoadNativeContext(libraryLoaded.Value.NativeWhisper!), isThreadSafe: false);
         }
+    }
+
+    /// <summary>
+    /// Returns the information about the loaded native runtime.
+    /// </summary>
+    /// <remarks>
+    /// This information includes support of the features like AVX, AVX2, AVX512, CUDA, etc.
+    /// </remarks>
+    /// <exception cref="Exception"></exception>
+    public static string? GetRuntimeInfo()
+    {
+        CheckLibraryLoaded();
+
+        var systemInfoPtr = libraryLoaded.Value.NativeWhisper!.WhisperPrintSystemInfo();
+        var systemInfoStr = Marshal.PtrToStringAnsi(systemInfoPtr);
+        Marshal.FreeHGlobal(systemInfoPtr);
+        return systemInfoStr;
+    }
+
+    /// <summary>
+    /// Returns an enumerable of the supported languages.
+    /// </summary>
+    /// <returns></returns>
+    public static IEnumerable<string> GetSupportedLanguages()
+    {
+        CheckLibraryLoaded();
+
+        for (var i = 0; i < libraryLoaded.Value.NativeWhisper!.Whisper_Lang_Max_Id(); i++)
+        {
+            var languagePtr = libraryLoaded.Value.NativeWhisper!.Whisper_Lang_Str(i);
+            var language = Marshal.PtrToStringAnsi(languagePtr);
+            if (!string.IsNullOrEmpty(language))
+            {
+                yield return language;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a factory that uses the ggml model from a buffer in order to create <seealso cref="WhisperProcessorBuilder"/>.
+    /// </summary>
+    /// <param name="path">The path to the model.</param>
+    /// <returns>An instance to the same builder.</returns>
+    /// <remarks>
+    /// If you don't know where to find a ggml model, you can use <seealso cref="Ggml.WhisperGgmlDownloader"/> which is downloading a model from huggingface.co.
+    /// </remarks>
+    public static WhisperFactory FromPath(string path)
+    {
+        return FromPath(path, WhisperFactoryOptions.Default);
     }
 
     /// <summary>
     /// Creates a factory that uses the ggml model from a path in order to create <seealso cref="WhisperProcessorBuilder"/>.
     /// </summary>
     /// <param name="path">The path to the model.</param>
-    /// <param name="delayInitialization">A value indicating if the model should be loaded right away or during the first <see cref="CreateBuilder"/> call.</param>
-    /// <param name="libraryPath">The path to the library</param>
-    /// <param name="bypassLoading">Bypass loading the library. Use this if you've already loaded the library through other means.</param>
-    /// <param name="useGpu">A value indicating if the model should be loaded on the GPU or CPU (if runtime with GPU support is installed)</param>
+    /// <param name="options">The options for the factory and the loading of the model.</param>
     /// <returns>An instance to the same builder.</returns>
     /// <remarks>
     /// If you don't know where to find a ggml model, you can use <seealso cref="Ggml.WhisperGgmlDownloader"/> which is downloading a model from huggingface.co.
     /// </remarks>
-    public static WhisperFactory FromPath(string path, bool delayInitialization = false, string? libraryPath = default, bool bypassLoading = false, bool useGpu = true)
+    public static WhisperFactory FromPath(string path, WhisperFactoryOptions options)
     {
-        return new WhisperFactory(new WhisperProcessorModelFileLoader(path, useGpu), delayInitialization, libraryPath, bypassLoading);
+        return new WhisperFactory(new WhisperProcessorModelFileLoader(path, options), options.DelayInitialization);
     }
 
     /// <summary>
-    /// Creates a factory that uses the ggml model from a buffer in order to create <seealso cref="WhisperProcessorBuilder"/>.
+    /// Creates a factory that uses the ggml model from a buffer in memory in order to create <seealso cref="WhisperProcessorBuilder"/>.
     /// </summary>
-    /// <param name="buffer">The buffer with the model.</param>
-    /// <param name="delayInitialization">A value indicating if the model should be loaded right away or during the first <see cref="CreateBuilder"/> call.</param>
-    /// <param name="libraryPath">The path to the library</param>
-    /// <param name="bypassLoading">Bypass loading the library. Use this if you've already loaded the library though other means.</param>
-    /// <param name="useGpu">A value indicating if the model should be loaded on the GPU or CPU (if runtime with GPU support is installed)</param>
+    /// <param name="memory">The memory buffer with the model.</param>
     /// <returns>An instance to the same builder.</returns>
     /// <remarks>
     /// If you don't know where to find a ggml model, you can use <seealso cref="Ggml.WhisperGgmlDownloader"/> which is downloading a model from huggingface.co.
     /// </remarks>
-    public static WhisperFactory FromBuffer(byte[] buffer, bool delayInitialization = false, string? libraryPath = default, bool bypassLoading = false, bool useGpu = true)
+    public static WhisperFactory FromBuffer(Memory<byte> memory)
     {
-        return new WhisperFactory(new WhisperProcessorModelBufferLoader(buffer, useGpu), delayInitialization, libraryPath, bypassLoading);
+        return FromBuffer(memory, WhisperFactoryOptions.Default);
+    }
+
+    /// <summary>
+    /// Creates a factory that uses the ggml model from a buffer in memory in order to create <seealso cref="WhisperProcessorBuilder"/>.
+    /// </summary>
+    /// <param name="memory">The memory buffer with the model.</param>
+    /// <param name="options">Thhe options for the factory and the loading of the model.</param>
+    /// <returns>An instance to the same builder.</returns>
+    /// <remarks>
+    /// If you don't know where to find a ggml model, you can use <seealso cref="Ggml.WhisperGgmlDownloader"/> which is downloading a model from huggingface.co.
+    /// </remarks>
+    public static WhisperFactory FromBuffer(Memory<byte> memory, WhisperFactoryOptions options)
+    {
+        return new WhisperFactory(new WhisperProcessorModelMemoryLoader(memory, options), options.DelayInitialization);
     }
 
     /// <summary>
@@ -95,10 +152,14 @@ public sealed class WhisperFactory : IDisposable
     /// <exception cref="WhisperModelLoadException">Throws if the model couldn't be loaded.</exception>
     public WhisperProcessorBuilder CreateBuilder()
     {
+#if NET8_0_OR_GREATER
+        ObjectDisposedException.ThrowIf(wasDisposed, this);
+#else
         if (wasDisposed)
         {
             throw new ObjectDisposedException(nameof(WhisperFactory));
         }
+#endif
 
         var context = contextLazy.Value;
         if (context == IntPtr.Zero)
@@ -106,7 +167,7 @@ public sealed class WhisperFactory : IDisposable
             throw new WhisperModelLoadException("Failed to load the whisper model.");
         }
 
-        return new WhisperProcessorBuilder(contextLazy.Value);
+        return new WhisperProcessorBuilder(contextLazy.Value, libraryLoaded.Value.NativeWhisper!, stringPool);
     }
 
     public void Dispose()
@@ -115,11 +176,21 @@ public sealed class WhisperFactory : IDisposable
         {
             return;
         }
-        if (contextLazy.IsValueCreated && contextLazy.Value != IntPtr.Zero)
+
+        // Even if the Lazy value was not created, we still need to free the context if it was eagerly initialized.
+        if ((contextLazy.IsValueCreated || isEagerlyInitialized) && contextLazy.Value != IntPtr.Zero)
         {
-            NativeMethods.whisper_free(contextLazy.Value);
+            libraryLoaded.Value.NativeWhisper!.Whisper_Free(contextLazy.Value);
         }
         loader.Dispose();
         wasDisposed = true;
+    }
+
+    private static void CheckLibraryLoaded()
+    {
+        if (!libraryLoaded.Value.IsSuccess)
+        {
+            throw new Exception($"Failed to load native whisper library. Error: {libraryLoaded.Value.ErrorMessage}");
+        }
     }
 }

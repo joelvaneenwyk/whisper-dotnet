@@ -1,5 +1,6 @@
 // Licensed under the MIT license: https://opensource.org/licenses/MIT
 
+using Whisper.net.Internals.Native;
 using Whisper.net.SamplingStrategy;
 
 namespace Whisper.net;
@@ -10,13 +11,17 @@ namespace Whisper.net;
 public class WhisperProcessorBuilder
 {
     private readonly WhisperProcessorOptions whisperProcessorOptions;
+    private readonly INativeWhisper nativeWhisper;
+    private readonly IStringPool stringPool;
 
-    internal WhisperProcessorBuilder(IntPtr context)
+    internal WhisperProcessorBuilder(IntPtr context, INativeWhisper nativeWhisper, IStringPool stringPool)
     {
         whisperProcessorOptions = new WhisperProcessorOptions()
         {
             ContextHandle = context
         };
+        this.nativeWhisper = nativeWhisper;
+        this.stringPool = stringPool;
     }
 
     /// <summary>
@@ -252,19 +257,6 @@ public class WhisperProcessorBuilder
     }
 
     /// <summary>
-    /// [EXPERIMENTAL] Configures the processor to speed up the audio 2x for faster recognition.
-    /// </summary>
-    /// <returns>An instance to the same builder.</returns>
-    /// <remarks>
-    /// Quality might be degraded while performance might be improved.
-    /// </remarks>
-    public WhisperProcessorBuilder WithSpeedUp2x()
-    {
-        whisperProcessorOptions.SpeedUp2x = true;
-        return this;
-    }
-
-    /// <summary>
     ///  [EXPERIMENTAL] Configures the processor to override the audio context size.
     /// </summary>
     /// <param name="audioContextSize">Audio context size to be overridden</param>
@@ -275,6 +267,20 @@ public class WhisperProcessorBuilder
     public WhisperProcessorBuilder WithAudioContextSize(int audioContextSize)
     {
         whisperProcessorOptions.AudioContextSize = audioContextSize;
+        return this;
+    }
+
+    /// <summary>
+    /// [EXPERIMENTAL] Configures the processor to suppress specific tokens that are matched by the regex.
+    /// </summary>
+    /// <param name="regex">The regex that should be used for filtering.</param>
+    /// <returns>An instance to the same builder.</returns>
+    /// <remarks>
+    /// See https://github.com/openai/whisper/discussions/1041 for more details.
+    /// </remarks>
+    public WhisperProcessorBuilder WithSuppressRegex(string regex)
+    {
+        whisperProcessorOptions.SuppressRegex = regex;
         return this;
     }
 
@@ -424,7 +430,6 @@ public class WhisperProcessorBuilder
     /// <returns>An instance to the same builder.</returns>
     /// <remarks>
     /// Default value is 0.6f.
-    /// Note: Not implemented in native code.
     /// </remarks>
     public WhisperProcessorBuilder WithNoSpeechThreshold(float noSpeechThreshold)
     {
@@ -466,6 +471,37 @@ public class WhisperProcessorBuilder
     }
 
     /// <summary>
+    /// Adds the functionlity of pooling the strings that are generated reducing the number of allocations.
+    /// </summary>
+    /// <remarks>
+    /// When using this option designed for high-performance use-cases,
+    /// ensure that you're returning the <seealso cref="SegmentData"/> object back to the <seealso cref="WhisperProcessor"/>
+    /// using the method <see cref="WhisperProcessor.Return(SegmentData)"/>.
+    ///
+    /// By default, this option is disabled.
+    /// When calling this method with null, a default implementation of <seealso cref="IStringPool"/> will be used (reshared between all processors created for the <seealso cref="WhisperFactory"/>.
+    /// </remarks>
+    /// <returns>An instance to the same builder.</returns>
+    public WhisperProcessorBuilder WithStringPool(IStringPool? stringPool = null)
+    {
+        whisperProcessorOptions.StringPool = stringPool ?? this.stringPool;
+        return this;
+    }
+
+    /// <summary>
+    /// Disables the string pooling.
+    /// </summary>
+    /// <remarks>
+    /// This will disable the pooling of strings that are generated (have effect only if <seealso cref="WithStringPool"/> was called).
+    /// </remarks>
+    /// <returns>An instance to the same builder.</returns>
+    public WhisperProcessorBuilder WithoutStringPool()
+    {
+        whisperProcessorOptions.StringPool = null;
+        return this;
+    }
+
+    /// <summary>
     /// Configures the processor to use the Greedy Sampling strategy.
     /// </summary>
     /// <returns>A new <seealso cref="GreedySamplingStrategyBuilder"/> for configuring the <seealso cref="GreedySamplingStrategy"/></returns>
@@ -498,11 +534,35 @@ public class WhisperProcessorBuilder
     }
 
     /// <summary>
+    /// Configures the options for OpenVino encoder.
+    /// </summary>
+    /// <param name="openVinoEncoderPath">
+    /// Optional path to OpenVINO encoder IR model. If set to null, the path will be generated from the ggml model path that was passed if loaded from a file.
+    /// </param>
+    /// <param name="openVinoDevice">
+    /// OpenVINO device to run inference on ("CPU", "GPU", etc.)
+    /// </param>
+    /// <param name="openVinoCachePath">
+    /// Optional cache directory that can speed up init time, especially for  GPU, by caching compiled 'blobs' there. Null if not used.
+    /// </param>
+    /// <returns>An instance to the same builder.</returns>
+    /// <remarks>
+    /// These options will be applied only if using OpenVino runtime.
+    /// </remarks>
+    public WhisperProcessorBuilder WithOpenVinoEncoder(string? openVinoEncoderPath, string? openVinoDevice, string? openVinoCachePath)
+    {
+        whisperProcessorOptions.OpenVinoModelPath = openVinoEncoderPath;
+        whisperProcessorOptions.OpenVinoDevice = openVinoDevice;
+        whisperProcessorOptions.OpenVinoCacheDir = openVinoCachePath;
+        return this;
+    }
+
+    /// <summary>
     /// Builds the processor.
     /// </summary>
     /// <returns>The <seealso cref="WhisperProcessor"/> build with these configs.</returns>
     public WhisperProcessor Build()
     {
-        return new WhisperProcessor(whisperProcessorOptions);
+        return new WhisperProcessor(whisperProcessorOptions, nativeWhisper);
     }
 }
